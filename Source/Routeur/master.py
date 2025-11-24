@@ -1,5 +1,3 @@
-# master.py
-# -------------------------------------------------------------------
 # Master minimal :
 #  - reçoit les clés publiques des routeurs
 #  - fournit aux clients la liste des routeurs et leurs clés

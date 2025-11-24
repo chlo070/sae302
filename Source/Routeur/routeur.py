@@ -1,5 +1,3 @@
-# router.py
-# -------------------------------------------------------------------
 # Routeur :
 #  - génère sa paire de clés
 #  - s’enregistre auprès du Master

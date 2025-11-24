@@ -1,5 +1,3 @@
-# crypto.py
-# -------------------------------------------------------------------
 # Module de chiffrement simplifié pour le MVP.
 # Fournit une API : generate_keypair(), encrypt_with_pub(), decrypt_with_priv()
 # -------------------------------------------------------------------

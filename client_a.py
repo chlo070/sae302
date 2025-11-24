@@ -1,5 +1,3 @@
-# client_a.py
-# -------------------------------------------------------------------
 # Client A :
 #  - demande les clés des routeurs au Master
 #  - construit l’oignon
