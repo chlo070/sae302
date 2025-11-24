@@ -2,7 +2,7 @@ import socket
 import threading
 
 HOST = "127.0.0.1"
-PORT = 5003
+PORT = 5001
 
 def handle_client(conn):
     data = conn.recv(4096).decode()
