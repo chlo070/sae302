@@ -2,7 +2,7 @@ import socket
 import threading
 
 ROUTER_PORT = 5002
-NEXT_HOP = ("127.0.0.1", 5003)  # routeur suivant ou Client B
+NEXT_HOP = ("127.0.0.1", 5002)  # routeur suivant ou Client B
 
 
 def handle_client(conn):
