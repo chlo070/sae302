@@ -8,6 +8,7 @@
 
 import secrets
 import math
+#from symply import
 
 # ---------- utilitaires ----------
 def _int_to_bytes(x: int) -> bytes:
@@ -151,7 +152,7 @@ def decrypt_with_priv(priv, ciphertext_bytes):
         raise ValueError("Module invalide")
 
     if len(ciphertext_bytes) % k != 0:
-        raise ValueError("Taille du ciphertext inattendue (doit être multiple de k)")
+        raise ValueError(f<"Taille du ciphertext inattendue (doit être multiple de {k})")
 
     out = bytearray()
     for i in range(0, len(ciphertext_bytes), k):
