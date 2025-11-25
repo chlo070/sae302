@@ -1,10 +1,25 @@
 import socket
+import argparse
 
-HOST = "127.0.0.1"
-PORT = 5003
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=5002)
+    parser.add_argument("--msg", required=True, help="Message à envoyer")
+    args = parser.parse_args()
 
-s = socket.socket()
-s.connect((HOST, PORT))
-s.sendall(b"Bonjour du client !")
-s.close()
-print("Connexion au serveur fermée")
+    HOST = args.host
+    PORT = args.port
+    MESSAGE = args.msg.encode("utf-8")
+
+    s = socket.socket()
+    s.connect((HOST, PORT))
+    s.sendall(MESSAGE)
+    s.close()
+
+    print(f"[CLIENT A] Message envoyé avec succès : {args.msg}")
+    print("Connexion au serveur fermée")
+
+
+if __name__ == "__main__":
+    main()
