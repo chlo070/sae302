@@ -1,3 +1,4 @@
+# crypto.py
 # Toy RSA minimal pour usage pédagogique / MVP.
 # - génère des p, q par tests de primalité Miller-Rabin
 # - expose generate_keypair(bit_size=512)
@@ -8,7 +9,6 @@
 
 import secrets
 import math
-#from symply import
 
 # ---------- utilitaires ----------
 def _int_to_bytes(x: int) -> bytes:
@@ -120,8 +120,8 @@ def encrypt_with_pub(pub, plaintext_bytes):
     """
     n = pub["n"]
     e = pub["e"]
-    k = (n.bit_length() + 7) // 8 # taille en bytes d'un bloc chiffré
-    b = (n.bit_length() - 1) // 8 # taille max de bloc en bytes pour m < n
+    k = (n.bit_length() + 7) // 8          # taille en bytes d'un bloc chiffré
+    b = (n.bit_length() - 1) // 8         # taille max de bloc en bytes pour m < n
 
     if b <= 0:
         raise ValueError("Module trop petit pour l'encodage")
@@ -152,7 +152,7 @@ def decrypt_with_priv(priv, ciphertext_bytes):
         raise ValueError("Module invalide")
 
     if len(ciphertext_bytes) % k != 0:
-        raise ValueError(f<"Taille du ciphertext inattendue (doit être multiple de {k})")
+        raise ValueError("Taille du ciphertext inattendue (doit être multiple de k)")
 
     out = bytearray()
     for i in range(0, len(ciphertext_bytes), k):

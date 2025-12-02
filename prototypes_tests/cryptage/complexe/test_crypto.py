@@ -1,8 +1,9 @@
+# test_crypto.py
 import crypto
 
 def test_roundtrip():
     pub, priv = crypto.generate_keypair(bit_size=512)
-    msg = b"bonjour, ceci est un test long qui depasse la taille d'un bloc si necessaire " * 2
+    msg = b"bonjour, ceci est un test long qui dépasse la taille d'un bloc si nécessaire " * 2
     ct = crypto.encrypt_with_pub(pub, msg)
     pt = crypto.decrypt_with_priv(priv, ct)
     assert pt == msg, "Roundtrip échoué"
