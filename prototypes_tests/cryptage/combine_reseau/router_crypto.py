@@ -1,10 +1,10 @@
 import socket
 import threading
-from protCrypto import generate_keypair, decrypt
+from crypto import generate_keypair, decrypt
 
-HOST = "0.0.0.0"
+HOST = "127.0.0.1"
 PORT = 5002
-NEXT_HOP = ("0.0.0.0", 5003)  # routeur suivant ou Client B
+NEXT_HOP = ("127.0.0.1", 5003)  # routeur suivant ou Client B
 
 
 # génération clé privée/clé publique
@@ -15,7 +15,12 @@ def handle_client(conn):
     try:
         # --- RÉCEPTION ---
         data = conn.recv(4096)
-        # print("Routeur a reçu:", data)
+        if not data:
+            conn.close()
+            return # ignore paquets vides
+        else:
+            print("[ROUTEUR] Cipher reçu (bytes) :", data))
+
 
         # --- DECRYPTAGE RSA ---
         # 1) conversion bytes -> entier
@@ -41,6 +46,7 @@ def handle_client(conn):
 
 def start_router():
     s = socket.socket()
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     s.bind((HOST, PORT))
 
     # Timeout pour capturer Ctrl+C
@@ -60,9 +66,9 @@ def start_router():
     finally:
         s.close()
         print("[ROUTEUR] Socket fermé.")
-    while True:
-        conn, addr = s.accept()
-        threading.Thread(target=handle_client, args=(conn,)).start()
+    #while True:
+        #conn, addr = s.accept()
+        #threading.Thread(target=handle_client, args=(conn,)).start()
 
 """
 def cryptage(): # inutile finalement
