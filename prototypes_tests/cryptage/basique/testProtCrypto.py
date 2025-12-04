@@ -1,5 +1,5 @@
 # 3 fonctions : générer une clé + chiffrer + déchiffrer
-from prototypes_tests.cryptage.basique.protCrypto import generate_keypair, encrypt, decrypt
+from protCrypto import generate_keypair, encrypt, decrypt
 
 pub, priv = generate_keypair() # génération obvi
 

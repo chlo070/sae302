@@ -1,6 +1,3 @@
-# Client B : reçoit le message final et l'affiche.
-# -------------------------------------------------------------------
-
 import socket
 import threading
 import argparse
@@ -11,7 +8,6 @@ def handle_client(conn):
     if data:
         print("[CLIENT B] Message reçu :", data.decode("utf-8"))
     conn.close()
-
 
 def start_client_b(port):
     s = socket.socket()
