@@ -44,6 +44,9 @@ def generate_keypair(bits=16):
 
 def encrypt(pubkey, message: bytes):    # chiffrement
     n, e = pubkey
+    for b in message:   # vérification taille des blocs/caractères
+        if b >= n:
+            raise ValueError("Bloc trop grand pour n")
     return [pow(b, e, n) for b in message]
 
 def decrypt(privkey, cipher_blocks):    # déchiffrement
