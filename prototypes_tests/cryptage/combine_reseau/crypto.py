@@ -25,3 +25,4 @@ def decrypt(priv, c: int):
     m = pow(c, d, n) # DEchiffrement RSA : c= m^e mod n
     # récupération du message initial -> reconvertion de m en bytes
     return m.to_bytes((m.bit_length() + 7)//8, "big")
+
