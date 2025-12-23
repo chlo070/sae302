@@ -26,10 +26,17 @@ def start_router(port):
     pub, priv = generate_keypair()
     print(f"[ROUTER {port}] Clé publique = {pub}")
 
+    # socket REGISTER au master
     s = socket.socket()
-    s.bind(("127.0.0.1", port))
-    s.listen()
-    print(f"[ROUTER {port}] Écoute")
+    s.connect(("127.0.0.1", 4000))
+    msg = f"REGISTER 127.0.0.1 {port} {pub[0]} {pub[1]}"
+    s.sendall(msg.encode())
+    s.close()
+
+    # socket d'écoute
+    server = socket.socket()
+    server.bind(("127.0.0.1", port))
+    server.listen()
 
     def handle(conn):
         data = conn.recv(4096)
@@ -48,7 +55,7 @@ def start_router(port):
         conn.close()
 
     while True:
-        conn, _ = s.accept()
+        conn, _ = server.accept()
         threading.Thread(target=handle, args=(conn,), daemon=True).start()
 
 
@@ -67,19 +74,30 @@ def build_oignon(message: bytes, circuit):
     return payload
 
 def start_client_a(message: bytes):
-    # CIRCUIT CODÉ EN DUR (MVP)
-    # À remplacer plus tard par le master
+    s = socket.socket()
+    s.connect(("127.0.0.1", 4000))
+    s.sendall(b"GET_CIRCUIT")
 
-    circuit = [
-        ("127.0.0.1", 5002, (3233, 17)),  # Routeur 1 (clé publique)
-        ("127.0.0.1", 5003, (2773, 17)),  # Routeur 2
-    ]
+    data = b""
+    while True:
+        chunk = s.recv(4096)
+        if not chunk:
+            break
+        data += chunk
+    s.close()
+
+    circuit = []
+    for line in data.decode().splitlines():
+        if line == "END":
+            break
+        ip, port, n, e = line.split()
+        circuit.append((ip, int(port), (int(n), int(e))))
 
     oignon = build_oignon(message, circuit)
 
     first_ip, first_port, _ = circuit[0]
-    s = socket.socket()
-    sock.connect(first_ip, first_port)
+    sock = socket.socket()
+    sock.connect((first_ip, first_port))
     sock.sendall(oignon)
     sock.close()
 
@@ -88,7 +106,7 @@ def start_client_a(message: bytes):
 # client B / récépteur final
 def start_client_b(port):
     s = socket.socket()
-    s.bind("127.0.0.1", port)
+    s.bind(("127.0.0.1", port))
     s.listen()
     print("[CLIENT B] Écoute")
 

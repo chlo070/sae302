@@ -1,16 +1,10 @@
 import socket
-import pickle
 
 HOST = "127.0.0.1"
 PORT = 4000
 
-# circuit statique pour MVP
-# à terme : dynamique
-ROUTERS = [
-    ("127.0.0.1", 5001),
-    ("127.0.0.1", 5002),
-    ("127.0.0.1", 5003),
-]
+
+routeurs = []
 
 def start_master():
     s = socket.socket()
@@ -20,7 +14,18 @@ def start_master():
 
     while True:
         conn, _ = s.accept()
-        conn.sendall(pickle.dumps(ROUTERS))
+        data = conn.recv(4096).decode().strip()
+
+        if data.startswith("REGISTER"):
+            _, ip, port, n, e = data.split()
+            routeurs.append((ip, int(port), int(n), int(e)))
+            print("[MASTER] Routeur enregistré", ip, port)
+
+        elif data == "GET_CIRCUIT":
+            for r in routers:
+                conn.sendall(f"{r[0]} {r[1]} {r[2]} {r[3]}\n".encode())
+            conn.sendall(b"END\n")
+
         conn.close()
 
 if __name__ == "__main__":
