@@ -22,7 +22,7 @@ def start_master():
             print("[MASTER] Routeur enregistré", ip, port)
 
         elif data == "GET_CIRCUIT":
-            for r in routers:
+            for r in routeurs:
                 conn.sendall(f"{r[0]} {r[1]} {r[2]} {r[3]}\n".encode())
             conn.sendall(b"END\n")
 

@@ -13,6 +13,7 @@ CLIENT_B_PORT = 6000
 
 # routeur
 
+""" lié au déchiffrement trop tôt
 def handle_packet(data, privkey):
     blocks = deserialize(data)
     plain = decrypt(privkey, blocks)
@@ -21,10 +22,11 @@ def handle_packet(data, privkey):
     ip, port = dest.decode().split(":")
 
     return ip, int(port), payload
+"""
 
 def start_router(port):
     pub, priv = generate_keypair()
-    print(f"[ROUTER {port}] Clé publique = {pub}")
+    print(f"[ROUTEUR {port}] Clé publique = {pub}")
 
     # socket REGISTER au master
     s = socket.socket()
@@ -44,13 +46,23 @@ def start_router(port):
             conn.close()
             return
 
-        next_ip, next_port, payload = handle_packet(data, priv)
+        # déchiffrement trop tôt
+        # next_ip, next_port, payload = handle_packet(data, priv)
 
+        # séparation DEST | PAYLOAD
+        header, encrypted = data.split(b"|", 1)
+        next_ip, next_port = header.decode().split(":")
+        next_port = int(next_port)
+
+        # déchiffrement du payload uniquement
+        blocks = deserialize(encrypted)
+        plain = decrypt(priv, blocks)
+
+        # forward
         forward = socket.socket()
         forward.connect((next_ip, next_port))
-        forward.sendall(payload)
+        forward.sendall(plain)    # plain au lieu de payload
         forward.close()
-
 
         conn.close()
 
@@ -68,7 +80,7 @@ def build_oignon(message: bytes, circuit):
     # chiffrement en couches de l'intérieur vers l'extérieur
     for ip, port, pubkey in reversed(circuit):
         payload = serialize(encrypt(pubkey, payload))
-        # La destination de la couche suivante est le routeur courant
+        # La destination de la couche suivante (le routeur courant)
         payload = f"{ip}:{port}|".encode() + payload
 
     return payload
@@ -123,12 +135,12 @@ def start_client_b(port):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--role", choices=["router", "clienta", "clientb"], required=True)
+    parser.add_argument("--role", choices=["routeur", "clienta", "clientb"], required=True)
     parser.add_argument("--port", type=int)
     parser.add_argument("--msg")
     args = parser.parse_args()
 
-    if args.role == "router":
+    if args.role == "routeur":
         start_router(args.port)
 
     if args.role == "clienta":
