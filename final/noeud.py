@@ -49,19 +49,32 @@ def start_router(port):
         # déchiffrement trop tôt
         # next_ip, next_port, payload = handle_packet(data, priv)
 
-        # séparation DEST | PAYLOAD
+        """ # casse le flux
+        # adaptation pour le dernier routeur qui ne forward que la couche interne M
+        if b"|" not in data:
+            print("[ROUTER] Message final reçu :", data)
+            conn.close()
+            return
+
+        # séparation DEST | PAYLOAD (cas classique)
         header, encrypted = data.split(b"|", 1)
         next_ip, next_port = header.decode().split(":")
         next_port = int(next_port)
+        """
 
-        # déchiffrement du payload uniquement
-        blocks = deserialize(encrypted)
+        # étape 1 : déchiffrement du payload uniquement/d'une couche
+        blocks = deserialize(data)  # remplacement de enrypted par data
         plain = decrypt(priv, blocks)
 
-        # forward
+        # étape 2 : extraction destination + payload
+        dest, payload = plain.split(b"|", 1)
+        ip, port = dest.decode().split(":")
+        port = int(port)
+
+        # étape 3 : forward
         forward = socket.socket()
-        forward.connect((next_ip, next_port))
-        forward.sendall(plain)    # plain au lieu de payload
+        forward.connect((ip, port))
+        forward.sendall(payload)    # jonglage entre plain et payload
         forward.close()
 
         conn.close()
@@ -75,13 +88,13 @@ def start_router(port):
 # client A / construction oignon
 def build_oignon(message: bytes, circuit):
     # Couche interne à destination du Client B
-    payload = f"{CLIENT_B_IP}:{CLIENT_B_PORT}|".encode() + message
+    payload = message
 
     # chiffrement en couches de l'intérieur vers l'extérieur
     for ip, port, pubkey in reversed(circuit):
-        payload = serialize(encrypt(pubkey, payload))
         # La destination de la couche suivante (le routeur courant)
-        payload = f"{ip}:{port}|".encode() + payload
+        layer = f"{ip}:{port}|".encode() + payload
+        payload = serialize(encrypt(pubkey, payload))
 
     return payload
 

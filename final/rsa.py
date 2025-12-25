@@ -51,7 +51,8 @@ def encrypt(pubkey, message: bytes):    # chiffrement
 
 def decrypt(privkey, cipher_blocks):    # déchiffrement
     n, d = privkey
-    return bytes([pow(c, d, n) for c in cipher_blocks])
+    # return bytes([pow(c, d, n) for c in cipher_blocks])   # obsolète car interdit les message trop gros
+    return " ".join(str(pow(c, d, n)) for c in cipher_blocks).encode()  # chaine de texte comme pour 'serialize'
 
 # sérialisation
 def serialize(blocks):
