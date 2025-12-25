@@ -3,7 +3,6 @@ import socket
 HOST = "127.0.0.1"
 PORT = 4000
 
-
 routeurs = []
 
 def start_master():

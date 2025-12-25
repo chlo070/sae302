@@ -1,6 +1,7 @@
 import socket
 import threading
 import argparse
+import random
 from rsa import (generate_keypair,
                  encrypt, serialize, # client
                  decrypt, deserialize) # routeur
@@ -9,7 +10,6 @@ from rsa import (generate_keypair,
 
 CLIENT_B_IP = "127.0.0.1"
 CLIENT_B_PORT = 6000
-
 
 # routeur
 
@@ -62,6 +62,8 @@ def start_router(port):
         next_port = int(next_port)
         """
 
+        print(f"[ROUTEUR] Reçu: {data[:50]}...")
+
         # étape 1 : déchiffrement du payload uniquement/d'une couche
         blocks = deserialize(data)  # remplacement de enrypted par data
         plain = decrypt(priv, blocks)
@@ -88,13 +90,14 @@ def start_router(port):
 # client A / construction oignon
 def build_oignon(message: bytes, circuit):
     # Couche interne à destination du Client B
-    payload = message
+    # payload = message
+    payload = f"{CLIENT_B_IP}:{CLIENT_B_PORT}|".encode() + message
 
     # chiffrement en couches de l'intérieur vers l'extérieur
     for ip, port, pubkey in reversed(circuit):
         # La destination de la couche suivante (le routeur courant)
         layer = f"{ip}:{port}|".encode() + payload
-        payload = serialize(encrypt(pubkey, payload))
+        payload = serialize(encrypt(pubkey, layer))
 
     return payload
 
@@ -111,20 +114,25 @@ def start_client_a(message: bytes):
         data += chunk
     s.close()
 
-    circuit = []
+    tous_routeurs = []
     for line in data.decode().splitlines():
         if line == "END":
             break
         ip, port, n, e = line.split()
-        circuit.append((ip, int(port), (int(n), int(e))))
+        tous_routeurs.append((ip, int(port), (int(n), int(e))))
+
+    # Sélectionner aléatoirement 3 routeurs (ou moins si moins de 3 disponibles)
+    num_routeurs = min(3, len(tous_routeurs))
+    circuit = random.sample(tous_routeurs, num_routeurs) if num_routeurs > 0 else []
 
     oignon = build_oignon(message, circuit)
 
-    first_ip, first_port, _ = circuit[0]
-    sock = socket.socket()
-    sock.connect((first_ip, first_port))
-    sock.sendall(oignon)
-    sock.close()
+    if circuit :
+        first_ip, first_port, _ = circuit[0]
+        sock = socket.socket()
+        sock.connect((first_ip, first_port))
+        sock.sendall(oignon)
+        sock.close()
 
     print("[CLIENT] Message envoyé")
 
