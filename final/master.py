@@ -18,7 +18,7 @@ def start_master():
         if data.startswith("REGISTER"):
             _, ip, port, n, e = data.split()
             key = (ip, int(port))
-            routeurs[key] = (int(n), int(e))  # Met à jour ou ajoute
+            routeurs[key] = (int(n), int(e))  # update ou ajoute
             print(f"[MASTER] Routeur enregistré/mis à jour: {ip}:{port}")
 
 

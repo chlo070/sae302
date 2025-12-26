@@ -3,7 +3,7 @@ import math
 from sympy import isprime
 
 # génération nombres premiers
-def generate_prime(bits=32):
+def generate_prime(bits=512):
     while True:
         candidat = random.getrandbits(bits)
         if candidat % 2 == 0:
@@ -25,7 +25,7 @@ def modinv(a, m):
     return x % m
 
 # génération paire de clés
-def generate_keypair(bits=32):
+def generate_keypair(bits=512):
     p = generate_prime(bits)
     q = generate_prime(bits)
     while p == q:
@@ -42,24 +42,23 @@ def generate_keypair(bits=32):
 
     return (n, e), (n, d)   # clé pub, clé priv
 
-# chiffrement par blocs de 4 bytes
-def encrypt(pubkey, message: bytes):
+def encrypt(pubkey, message: bytes):    # chiffrement par blocs
     n, e = pubkey
     blocks = []
-    for i in range(0, len(message), 8):   # vérification taille des blocs/caractères
-        block = message[i:i + 8].ljust(8, b'\x00')  # Pad avec \x00 si < 8 bytes
+    for i in range(0, len(message), 128):
+        block = message[i:i+128].ljust(128, b'\x00')  # Pad avec \x00 si < 32 bytes
         block_int = int.from_bytes(block, 'big')
         if block_int >= n:
             raise ValueError("Bloc trop grand pour n")
         blocks.append(pow(block_int, e, n))
     return blocks
-
-# déchiffrement par blocs de 4 bytes
-def decrypt(privkey, cipher_blocks):
+ 
+def decrypt(privkey, cipher_blocks):    # déchiffrement par blocs de 32 bytes
     n, d = privkey
     decrypted = []
     for c in cipher_blocks:
-        block_bytes = val.to_bytes(8, 'big').lstrip(b'\x00')  # Enlève le padding \x00
+        val = pow(c, d, n)
+        block_bytes = val.to_bytes(128, 'big').lstrip(b'\x00')  # Enlève le padding \x00
         decrypted.extend(block_bytes)
     return bytes(decrypted)
 
