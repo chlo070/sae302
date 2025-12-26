@@ -3,7 +3,7 @@ import socket
 HOST = "127.0.0.1"
 PORT = 4000
 
-routeurs = []
+routeurs = {}  # Changé en dict pour éviter les doublons : clé = (ip, port), valeur = (n, e)
 
 def start_master():
     s = socket.socket()
@@ -17,12 +17,14 @@ def start_master():
 
         if data.startswith("REGISTER"):
             _, ip, port, n, e = data.split()
-            routeurs.append((ip, int(port), int(n), int(e)))
-            print("[MASTER] Routeur enregistré", ip, port)
+            key = (ip, int(port))
+            routeurs[key] = (int(n), int(e))  # Met à jour ou ajoute
+            print(f"[MASTER] Routeur enregistré/mis à jour: {ip}:{port}")
+
 
         elif data == "GET_CIRCUIT":
-            for r in routeurs:
-                conn.sendall(f"{r[0]} {r[1]} {r[2]} {r[3]}\n".encode())
+            for (ip, port), (n, e) in routeurs.items():
+                conn.sendall(f"{ip} {port} {n} {e}\n".encode())
             conn.sendall(b"END\n")
 
         conn.close()

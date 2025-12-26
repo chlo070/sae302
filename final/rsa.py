@@ -42,21 +42,25 @@ def generate_keypair(bits=32):
 
     return (n, e), (n, d)   # clé pub, clé priv
 
-# chiffrement
+# chiffrement par blocs de 4 bytes
 def encrypt(pubkey, message: bytes):
     n, e = pubkey
-    for b in message:   # vérification taille des blocs/caractères
-        if b >= n:
+    blocks = []
+    for i in range(0, len(message), 8):   # vérification taille des blocs/caractères
+        block = message[i:i + 8].ljust(8, b'\x00')  # Pad avec \x00 si < 8 bytes
+        block_int = int.from_bytes(block, 'big')
+        if block_int >= n:
             raise ValueError("Bloc trop grand pour n")
-    return [pow(b, e, n) for b in message]
+        blocks.append(pow(block_int, e, n))
+    return blocks
 
-# déchiffrement
+# déchiffrement par blocs de 4 bytes
 def decrypt(privkey, cipher_blocks):
     n, d = privkey
-    decrypted = [pow(c, d, n) for c in cipher_blocks]
-    for val in decrypted:
-        if not (0 <= val <= 255):
-            raise ValueError(f"Valeur déchiffrée invalide: {val}")
+    decrypted = []
+    for c in cipher_blocks:
+        block_bytes = val.to_bytes(8, 'big').lstrip(b'\x00')  # Enlève le padding \x00
+        decrypted.extend(block_bytes)
     return bytes(decrypted)
 
 # sérialisation
