@@ -2,9 +2,9 @@ import socket
 import threading
 import argparse
 import random
-from rsa import (generate_keypair,
-                 encrypt, serialize, # client
-                 decrypt, deserialize) # routeur
+from crypto import (generate_keypair,
+                    encrypt, serialize, # client
+                    decrypt, deserialize) # routeur
 
 #MASTER_ADDR = ("127.0.0.1", 4000)
 
@@ -19,7 +19,7 @@ def start_router(port):
     # socket REGISTER au master
     s = socket.socket()
     s.connect(("127.0.0.1", 4000))
-    msg = f"REGISTER 127.0.0.1 {port} {pub[0]} {pub[1]}"
+    msg = f"REGISTER 127.0.0.1 {port} {pub[0]}"
     s.sendall(msg.encode())
     s.close()
 
@@ -29,7 +29,15 @@ def start_router(port):
     server.listen()
 
     def handle(conn):
-        data = conn.recv(4096)
+        data = b""
+        while True:
+            chunk = conn.recv(65536)
+            if not chunk:
+                break
+            data += chunk
+            # Si on a reçu des données et pas de nouveau chunk, on sort
+            if len(chunk) < 65536:
+                break
         if not data:
             conn.close()
             return
@@ -37,9 +45,8 @@ def start_router(port):
         print(f"[ROUTEUR] Reçu: {data[:50]}...")
 
         try:
-            # étape 1 : déchiffrement du payload uniquement
-            blocks = deserialize(data)
-            plain = decrypt(priv, blocks)
+            # étape 1 : déchiffrement du payload
+            plain = decrypt(priv, data)
             print(f"[ROUTEUR] Plain: {plain[:50]}...")
             # étape 2 : extraction destination + payload
             # Gestion d'erreur pour le split
@@ -74,15 +81,30 @@ def start_router(port):
 
 # client A / construction oignon
 def build_oignon(message: bytes, circuit):
-    # Couche interne à destination du Client B
+    # circuit = [R1, R2, R3] - ordre du chemin à parcourir
+    # Construction de l'intérieur vers l'extérieur
+    # 
+    # R3 déchiffre et trouve : dest=ClientB | message
+    # R2 déchiffre et trouve : dest=R3 | payload_chiffré_pour_R3
+    # R1 déchiffre et trouve : dest=R2 | payload_chiffré_pour_R2
+    
+    # Début : message destiné au Client B (dernière destination)
     payload = f"{CLIENT_B_IP}:{CLIENT_B_PORT}|".encode() + message
-
-    # chiffrement en couches de l'intérieur vers l'extérieur
-    for i, (ip, port, pubkey) in enumerate(reversed(circuit)):
-        print(f"[CLIENT] Chiffrement couche {i + 1}")
-        # La destination de la couche suivante (le routeur courant)
-        layer = f"{ip}:{port}|".encode() + payload
-        payload = serialize(encrypt(pubkey, layer))
+    
+    # Parcours du dernier au premier routeur
+    for i in range(len(circuit) - 1, -1, -1):
+        ip, port, pubkey = circuit[i]
+        print(f"[CLIENT] Chiffrement couche {len(circuit) - i} pour routeur {ip}:{port}")
+        
+        # Chiffrer le payload actuel (qui contient déjà dest|data)
+        payload = serialize(encrypt(pubkey, payload))
+        
+        # Si on n'est pas au premier routeur, on doit préparer la couche pour le routeur précédent
+        # Le routeur i-1 doit savoir envoyer vers le routeur i
+        if i > 0:
+            # On préfixe avec la destination (routeur actuel) pour le prochain chiffrement
+            next_dest = f"{ip}:{port}|".encode()
+            payload = next_dest + payload
 
     return payload
 
@@ -103,12 +125,12 @@ def start_client_a(message: bytes):
     for line in data.decode().splitlines():
         if line == "END":
             break
-        ip, port, n, e = line.split()
-        tous_routeurs.append((ip, int(port), (int(n), int(e))))
+        ip, port, pubkey = line.split()
+        tous_routeurs.append((ip, int(port), (int(pubkey),)))
     # Après récupération
     print(f"[CLIENT] Routeurs récupérés: {tous_routeurs}")
 
-    # Sélectionner aléatoirement 3 routeurs (ou moins si moins de 3 disponibles) (le circuit)
+    # Sélectionner aléatoirement 3 routeurs (ou moins si moins disponibles)
     num_routeurs = min(3, len(tous_routeurs))
     #circuit = tous_routeurs[:3] if len(tous_routeurs) >= 3 else tous_routeurs
     #circuit = random.sample(tous_routeurs, num_routeurs) if num_routeurs > 0 else []
