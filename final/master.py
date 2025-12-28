@@ -2,6 +2,8 @@ import socket
 
 HOST = "127.0.0.1"
 PORT = 4000
+MIN_HOPS = 3
+MAX_HOPS = 5
 
 routeurs = {}  # clé = (ip, port), valeur = clé publique
 

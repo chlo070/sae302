@@ -42,12 +42,12 @@ def start_router(port):
             conn.close()
             return
 
-        print(f"[ROUTEUR] Reçu: {data[:50]}...")
+        print(f"[ROUTEUR {port}] Paquet reçu")
 
         try:
             # étape 1 : déchiffrement du payload
             plain = decrypt(priv, data)
-            print(f"[ROUTEUR] Plain: {plain[:50]}...")
+            print(f"[ROUTEUR {port}] Forward vers {ip}:{port}")
             # étape 2 : extraction destination + payload
             # Gestion d'erreur pour le split
             if b"|" not in plain:
@@ -80,6 +80,9 @@ def start_router(port):
 
 
 # client A / construction oignon
+MIN_HOPS = 3
+MAX_HOPS = 4
+
 def build_oignon(message: bytes, circuit):
     # circuit = [R1, R2, R3] - ordre du chemin à parcourir
     # Construction de l'intérieur vers l'extérieur
@@ -105,7 +108,6 @@ def build_oignon(message: bytes, circuit):
             # On préfixe avec la destination (routeur actuel) pour le prochain chiffrement
             next_dest = f"{ip}:{port}|".encode()
             payload = next_dest + payload
-
     return payload
 
 def start_client_a(message: bytes):
@@ -130,13 +132,15 @@ def start_client_a(message: bytes):
     # Après récupération
     print(f"[CLIENT] Routeurs récupérés: {tous_routeurs}")
 
-    # Sélectionner aléatoirement 3 routeurs (ou moins si moins disponibles)
-    num_routeurs = min(3, len(tous_routeurs))
-    #circuit = tous_routeurs[:3] if len(tous_routeurs) >= 3 else tous_routeurs
-    #circuit = random.sample(tous_routeurs, num_routeurs) if num_routeurs > 0 else []
-    # ordre logique du chemin (tel qu'il sera parcouru)
-    # ex : [R1, R2, R3]
-    circuit = random.sample(tous_routeurs, num_routeurs)
+    # Sélectionner aléatoirement 3 routeurs au minimum
+    if len(tous_routeurs) < MIN_HOPS:
+        print("[CLIENT] Pas assez de routeurs disponibles")
+        return
+    nb_sauts = random.randint(
+        MIN_HOPS,
+        min(MAX_HOPS, len(tous_routeurs))
+    )
+    circuit = random.sample(tous_routeurs, nb_sauts)    # nombre aléatoire
     print(f"[CLIENT] Circuit sélectionné: {circuit}")
 
     if not circuit:
@@ -146,7 +150,7 @@ def start_client_a(message: bytes):
     oignon = build_oignon(message, circuit)
     print(f"[CLIENT] Oignon construit: {oignon[:100]}...")
 
-    if circuit :
+    if circuit :    # logique Tor-like (entrée du circuit)
         first_ip, first_port, _ = circuit[0]
         print(f"[CLIENT] Tentative de connexion à {first_ip}:{first_port}")
         sock = socket.socket()
@@ -154,6 +158,8 @@ def start_client_a(message: bytes):
         sock.sendall(oignon)
         sock.close()
         print("[CLIENT] Message envoyé")
+
+    print(f"[CLIENT] Circuit final : {[f'{ip}:{port}' for ip, port, _ in circuit]}")
 
 # client B / récepteur final
 def start_client_b(port):
