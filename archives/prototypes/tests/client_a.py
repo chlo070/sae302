@@ -6,7 +6,7 @@
 
 import socket
 import argparse
-from utils import serialize, deserialize, parse_addr
+from archives.prototypes.tests.utils import serialize, deserialize, parse_addr
 import crypto
 
 def get_routers(master_addr):

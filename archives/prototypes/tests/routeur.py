@@ -10,7 +10,8 @@ import socket
 import threading
 import argparse
 from utils import serialize, deserialize, parse_addr
-import crypto
+from archives.prototypes.tests import crypto
+
 
 def register_with_master(master_addr, my_addr, pubkey):
     host, port = parse_addr(master_addr)

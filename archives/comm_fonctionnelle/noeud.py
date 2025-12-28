@@ -161,7 +161,7 @@ def start_client_a(message: bytes):
 
     print(f"[CLIENT] Circuit final : {[f'{ip}:{port}' for ip, port, _ in circuit]}")
 
-# client B / récepteur final
+# client B / récepteur comm_fonctionnelle
 def start_client_b(port):
     s = socket.socket()
     s.bind(("127.0.0.1", port))

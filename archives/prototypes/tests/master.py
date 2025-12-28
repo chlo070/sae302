@@ -5,7 +5,7 @@
 
 import socket
 import threading
-from utils import serialize, deserialize
+from archives.prototypes.tests.utils import serialize, deserialize
 
 ROUTERS = []     # liste de dict {addr, pubkey}
 

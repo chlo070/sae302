@@ -1,4 +1,4 @@
-# Client B : reçoit le message final et l'affiche.
+# Client B : reçoit le message comm_fonctionnelle et l'affiche.
 # -------------------------------------------------------------------
 
 import socket
