@@ -4,14 +4,17 @@ import argparse
 import random
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../commun")))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../commun")))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+COMMUN_DIR = os.path.abspath(os.path.join(BASE_DIR, "../commun"))
+sys.path.insert(0, COMMUN_DIR)
 from crypto import (generate_keypair,
                     encrypt, serialize, # client
                     decrypt, deserialize) # routeur
 
 MASTER_IP = "192.168.106.10"
 ROUTEUR_IP = "192.168.106.20"
-CLIENT_B_IP = "192.162.106.30"
+CLIENT_B_IP = "192.168.106.30"
 CLIENT_B_PORT = 6000
 
 # routeur
@@ -45,18 +48,19 @@ def start_router(port):
             conn.close()
             return
 
-        print(f"[ROUTEUR {port}] Paquet reçu")
+        print(f"[ROUTEUR] Paquet reçu")
 
         try:
             # étape 1 : déchiffrement du payload
             plain = decrypt(priv, data)
-            print(f"[ROUTEUR {port}] Forward vers {ip}:{port}")
-            # étape 2 : extraction destination + payload
-            # Gestion d'erreur pour le split
+
+            # étape 2 : Gestion d'erreur pour le split
             if b"|" not in plain:
                 print(f"[ROUTEUR] Erreur: Pas de séparateur '|' dans plain: {plain}")
                 conn.close()
                 return
+
+            # étape 3 : extraction destination + payload (Parsing destination)
             dest, payload = plain.split(b"|", 1)
             try:
                 ip, port_str = dest.decode('utf-8').split(":")
@@ -65,13 +69,16 @@ def start_router(port):
                 print(f"[ROUTEUR] Erreur de décodage dest: {e}, dest: {dest}")
                 conn.close()
                 return
-            print(f"[ROUTEUR] Forward à {ip}:{port}, payload: {payload[:50]}...")
-            # étape 3 : forward
+
+            # log
+            print(f"[ROUTEUR {port}] Forward à {ip}:{port}, payload: {payload[:50]}...")
+
+            # étape 4 : forward
             forward = socket.socket()
             forward.connect((ip, port))
-            forward.sendall(payload)    # jonglage entre plain et payload
+            forward.sendall(payload)
             forward.close()
-            print(f"[ROUTEUR] Forward réussi à {ip}:{port}")
+            print(f"[ROUTEUR {port}] Forward réussi à {ip}:{port}")
         except Exception as e:
             print(f"[ROUTEUR] Erreur: {e}")
         conn.close()
