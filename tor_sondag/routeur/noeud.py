@@ -2,11 +2,11 @@ import socket
 import threading
 import argparse
 import random
+import sys
+sys.path.append("../commun")
 from crypto import (generate_keypair,
                     encrypt, serialize, # client
                     decrypt, deserialize) # routeur
-
-#MASTER_ADDR = ("127.0.0.1", 4000)
 
 CLIENT_B_IP = "127.0.0.1"
 CLIENT_B_PORT = 6000

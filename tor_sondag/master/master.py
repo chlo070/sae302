@@ -1,4 +1,8 @@
 import socket
+import sys
+sys.path.append("../commun")
+
+from crypto import encrypt, decrypt, generate_keypair
 
 HOST = "127.0.0.1"
 PORT = 4000
