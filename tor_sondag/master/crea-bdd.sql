@@ -14,3 +14,7 @@ CREATE TABLE IF NOT EXISTS logs (
     source VARCHAR(50),
     message TEXT
 );
+
+CREATE USER 'toto'@'%' IDENTIFIED BY 'toto';
+GRANT ALL PRIVILEGES ON tor_sondag.* TO 'toto'@'%';
+FLUSH PRIVILEGES;
