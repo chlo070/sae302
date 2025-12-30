@@ -4,7 +4,6 @@ import argparse
 import random
 import os
 import sys
-#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../commun")))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 COMMUN_DIR = os.path.abspath(os.path.join(BASE_DIR, "../commun"))
 sys.path.insert(0, COMMUN_DIR)
@@ -13,6 +12,7 @@ from crypto import (generate_keypair,
                     decrypt, deserialize) # routeur
 
 MASTER_IP = "192.168.106.10"
+MASTER_PORT = 5000
 ROUTEUR_IP = "192.168.106.20"
 CLIENT_B_IP = "192.168.106.30"
 CLIENT_B_PORT = 6000
@@ -24,7 +24,7 @@ def start_router(port):
 
     # socket REGISTER au master
     s = socket.socket()
-    s.connect((MASTER_IP, 4000))
+    s.connect((MASTER_IP, MASTER_PORT))
     msg = f"REGISTER {ROUTEUR_IP} {port} {pub[0]}"
     s.sendall(msg.encode())
     s.close()
@@ -48,7 +48,7 @@ def start_router(port):
             conn.close()
             return
 
-        print(f"[ROUTEUR] Paquet reçu")
+        print(f"[ROUTEUR {port}] Paquet reçu")
 
         try:
             # étape 1 : déchiffrement du payload
@@ -56,7 +56,7 @@ def start_router(port):
 
             # étape 2 : Gestion d'erreur pour le split
             if b"|" not in plain:
-                print(f"[ROUTEUR] Erreur: Pas de séparateur '|' dans plain: {plain}")
+                print(f"[ROUTEUR {port}] Erreur: Pas de séparateur '|' dans plain: {plain}")
                 conn.close()
                 return
 
@@ -64,23 +64,23 @@ def start_router(port):
             dest, payload = plain.split(b"|", 1)
             try:
                 ip, port_str = dest.decode('utf-8').split(":")
-                port = int(port_str)
+                dest_port = int(port_str)
             except (UnicodeDecodeError, ValueError) as e:
-                print(f"[ROUTEUR] Erreur de décodage dest: {e}, dest: {dest}")
+                print(f"[ROUTEUR {port}] Erreur de décodage dest: {e}, dest: {dest}")
                 conn.close()
                 return
 
             # log
-            print(f"[ROUTEUR {port}] Forward à {ip}:{port}, payload: {payload[:50]}...")
+            print(f"[ROUTEUR {port}] Forward à {ip}:{dest_port}, payload: {payload[:50]}...")
 
             # étape 4 : forward
             forward = socket.socket()
-            forward.connect((ip, port))
+            forward.connect((ip, dest_port))
             forward.sendall(payload)
             forward.close()
-            print(f"[ROUTEUR {port}] Forward réussi à {ip}:{port}")
+            print(f"[ROUTEUR {port}] Forward réussi à {ip}:{dest_port}")
         except Exception as e:
-            print(f"[ROUTEUR] Erreur: {e}")
+            print(f"[ROUTEUR {port}] Erreur: {e}")
         conn.close()
 
     while True:
@@ -122,7 +122,7 @@ def build_oignon(message: bytes, circuit):
 
 def start_client_a(message: bytes):
     s = socket.socket()
-    s.connect((MASTER_IP, 4000))
+    s.connect((MASTER_IP, MASTER_PORT))
     s.sendall(b"GET_CIRCUIT")
 
     data = b""

@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS routeurs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ip VARCHAR(45) NOT NULL,
     port INT NOT NULL,
-    pubkey TEXT NOT NULL
+    pubkey TEXT NOT NULL,
+    UNIQUE (ip,port)
 );
 
 CREATE TABLE IF NOT EXISTS logs (
