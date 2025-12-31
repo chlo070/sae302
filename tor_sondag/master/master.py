@@ -69,10 +69,10 @@ def get_routers():
         try:
             cursor = conn.cursor()
             cursor.execute("SELECT ip, port, pubkey FROM routeurs")
-            rows = cursor.fetchall()
-            print(f"[DEBUG] Rows récupérées depuis BDD: {rows}")  # debug temporaire à suppr
-            for row in rows:
-                ip, port, pubkey_str = row
+            entrees = cursor.fetchall()
+            print(f"[DEBUG] Entrées récupérées depuis BDD: {entrees}")  # debug temporaire à suppr
+            for entree in entrees:
+                ip, port, pubkey_str = entree
                 try:
                     pubkey = int(pubkey_str)
                     routers.append((ip, int(port), pubkey))
