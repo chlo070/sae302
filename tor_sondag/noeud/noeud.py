@@ -11,10 +11,10 @@ from crypto import (generate_keypair,
                     encrypt, serialize, # client
                     decrypt, deserialize) # routeur
 
-MASTER_IP = "192.168.106.10"
+MASTER_IP = "192.168.x.10"
 MASTER_PORT = 5000
-ROUTEUR_IP = "192.168.106.20"
-CLIENT_B_IP = "192.168.106.20"
+ROUTEUR_IP = "192.168.x.20"
+CLIENT_B_IP = "192.168.x.20"
 CLIENT_B_PORT = 6000
 
 # routeur
@@ -41,7 +41,6 @@ def start_router(port):
             if not chunk:
                 break
             data += chunk
-            # Si on a reçu des données et pas de nouveau chunk, on sort
             if len(chunk) < 65536:
                 break
         if not data:
@@ -94,28 +93,28 @@ MIN_HOPS = 3
 MAX_HOPS = 4
 
 def build_oignon(message: bytes, circuit):
+    """
     # circuit = [R1, R2, R3] - ordre du chemin à parcourir
     # Construction de l'intérieur vers l'extérieur
-    # 
+    #
     # R3 déchiffre et trouve : dest=ClientB | message
     # R2 déchiffre et trouve : dest=R3 | payload_chiffré_pour_R3
     # R1 déchiffre et trouve : dest=R2 | payload_chiffré_pour_R2
-    
-    # Début : message destiné au Client B (dernière destination)
+    """
+    # début : message destiné au Client B (dernière destination)
     payload = f"{CLIENT_B_IP}:{CLIENT_B_PORT}|".encode() + message
     
-    # Parcours du dernier au premier routeur
+    # parcours du dernier au premier routeur
     for i in range(len(circuit) - 1, -1, -1):
         ip, port, pubkey = circuit[i]
         print(f"\n[CLIENT] Chiffrement couche {len(circuit) - i} pour routeur {ip}:{port}")
         
-        # Chiffrer le payload actuel (qui contient déjà dest|data)
+        # chiffrement du payload actuel (qui contient déjà dest|data)
         payload = serialize(encrypt(pubkey, payload))
         
-        # Si on n'est pas au premier routeur, on doit préparer la couche pour le routeur précédent
-        # Le routeur i-1 doit savoir envoyer vers le routeur i
+        # si ce n'est pas le premier routeur, préparation de la couche pour le routeur précédent
         if i > 0:
-            # On préfixe avec la destination (routeur actuel) pour le prochain chiffrement
+            # préfixe avec la destination (routeur actuel) pour le prochain chiffrement
             next_dest = f"{ip}:{port}|".encode()
             payload = next_dest + payload
     return payload
@@ -139,10 +138,9 @@ def start_client_a(message: bytes):
             break
         ip, port, pubkey = line.split()
         tous_routeurs.append((ip, int(port), (int(pubkey),)))
-    # Après récupération
     print(f"\n[CLIENT] Routeurs récupérés: {tous_routeurs}")
 
-    # Sélectionner aléatoirement 3 routeurs au minimum
+    # sélection aléatoirement de 3 routeurs min
     if len(tous_routeurs) < MIN_HOPS:
         print("[CLIENT] Pas assez de routeurs disponibles")
         return
@@ -150,8 +148,7 @@ def start_client_a(message: bytes):
         MIN_HOPS,
         min(MAX_HOPS, len(tous_routeurs))
     )
-    circuit = random.sample(tous_routeurs, nb_sauts)    # nombre aléatoire
-    #print(f"\n[CLIENT] Circuit sélectionné: {circuit}")
+    circuit = random.sample(tous_routeurs, nb_sauts)
     print(f"\n[CLIENT] Circuit sélectionné: {[f'{ip}:{port}' for ip, port, _ in circuit]}")
 
     if not circuit:
@@ -169,8 +166,6 @@ def start_client_a(message: bytes):
         sock.sendall(oignon)
         sock.close()
         print("\n[CLIENT] Message envoyé")
-
-    #print(f"\n[CLIENT] Circuit final : {[f'{ip}:{port}' for ip, port, _ in circuit]}")
 
 # client B / récepteur comm_fonctionnelle
 def start_client_b(port):

@@ -1,5 +1,5 @@
 import socket
-import pymysql  # Connecteur pour MariaDB/MySQL
+import pymysql
 from pymysql import Error
 
 HOST = "0.0.0.0"
@@ -12,7 +12,7 @@ MAX_HOPS = 5
 Gestion de la BDD
 """
 
-# Configuration de la base
+# configuration de la base
 CONFIG_BDD = {
     'host': 'localhost',
     'user': 'toto',
@@ -51,7 +51,7 @@ def register_router(ip, port, pubkey):
             cursor.execute("""
                 INSERT INTO routeurs (ip, port, pubkey) VALUES (%s, %s, %s)
                 ON DUPLICATE KEY UPDATE pubkey = VALUES(pubkey)
-            """, (ip, port, str(pubkey)))   # Stocke pubkey comme string pour éviter les problèmes d'int trop grand
+            """, (ip, port, str(pubkey)))
             conn.commit()
             log_event("MASTER", f"Routeur enregistré/mis à jour: {ip}:{port}")
             print(f"[MASTER] Routeur enregistré/mis à jour: {ip}:{port}")
@@ -70,15 +70,14 @@ def get_routers():
             cursor = conn.cursor()
             cursor.execute("SELECT ip, port, pubkey FROM routeurs")
             entrees = cursor.fetchall()
-            print(f"[DEBUG] Entrées récupérées depuis BDD: {entrees}")  # debug temporaire à suppr
             for entree in entrees:
                 ip, port, pubkey_str = entree
                 try:
                     pubkey = int(pubkey_str)
                     routers.append((ip, int(port), pubkey))
                 except ValueError as e:
-                    print(f"[DEBUG] Erreur parsing pubkey pour {ip}:{port}: {e}")  # Debug temporaire à suppr
-            print(f"[DEBUG] Routeurs parsés: {routers}")  # Debug temporaire à suppr
+                    print(f"[DEBUG] Erreur parsing pubkey pour {ip}:{port}: {e}")
+            print(f"[DEBUG] Routeurs parsés: {routers}")
             log_event("MASTER", f"Circuit demandé: {len(routers)} routeurs récupérés")
         except Error as e:
             print(f"[MASTER] Erreur lors de la récupération des routeurs: {e}")
@@ -86,7 +85,7 @@ def get_routers():
         finally:
             conn.close()
     else:
-        print("[DEBUG] Connexion BDD échouée dans get_routers")  # Debug temporaire à suppr
+        print("[DEBUG] Connexion BDD échouée dans get_routers")
     return routers
 
 
@@ -116,11 +115,10 @@ def start_master():
 
         elif data == "GET_CIRCUIT":
             routers = get_routers()
-            print(f"[DEBUG] Envoi des routeurs: {routers}")  # Debug temporaire à suppr
-            if not routers:  # Ajout pour log si vide
+            if not routers:
                 log_event("MASTER", "Aucun routeur disponible pour GET_CIRCUIT")
-            for ip, port, pubkey in routers:    # routers est [(ip, port, pubkey), ...]
-                conn.sendall(f"{ip} {port} {pubkey}\n".encode())    # pubkey est un tuple, on prend le premier élément
+            for ip, port, pubkey in routers:
+                conn.sendall(f"{ip} {port} {pubkey}\n".encode())
             conn.sendall(b"END\n")
 
         conn.close()
